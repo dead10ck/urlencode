@@ -1,0 +1,8 @@
+[package]
+name = "urlencode"
+version = "0.1.0"
+authors = ["Skyler Hawthorne <skylerhawthorne@gmail.com>"]
+
+[dependencies]
+percent-encoding = "^1"
+clap = "^2"
