@@ -16,7 +16,10 @@ fn main() {
     let matches = App::new("urlencode")
         .version(VERSION)
         .author("Skyler Hawthorne <skylerhawthorne@gmail.com>")
-        .about("URL-encodes or -decodes the input")
+        .about(
+            "URL-encodes or -decodes the input. If INPUT is given, it encodes or \
+             decodes INPUT, otherwise it takes its input fromt stdin.",
+        )
         .arg(Arg::with_name("decode").short("d").long("decode").help(
             "Decode the input, rather than encode.",
         ))
@@ -36,11 +39,17 @@ fn main() {
                 .takes_value(true)
                 .possible_values(&["default", "path", "query", "simple", "userinfo"])
                 .default_value("default")
-                .help(
+                .help("The encode set to use when encoding.")
+                .long_help(
                     "The encode set to use when encoding. See \
                       https://docs.rs/percent-encoding/1.0.0/percent_encoding/index.html \
                       for more details.",
                 ),
+        )
+        .arg(
+            Arg::with_name("INPUT")
+                .help("The string to encode.")
+                .index(1),
         )
         .get_matches();
 
@@ -56,37 +65,46 @@ fn run(arg_matches: &ArgMatches) -> Result<(), Box<Error + Send + Sync>> {
     let mut stdout_handle = stdout.lock();
     let mut stdin_handle = stdin.lock();
 
-    let decode_mode = arg_matches.is_present("decode") || arg_matches.is_present("strict-decode");
-    let lossy = !arg_matches.is_present("strict-decode");
+    if arg_matches.is_present("INPUT") {
+        let input = arg_matches.value_of("INPUT").unwrap();
+        return transform_line(input, &mut stdout_handle, arg_matches);
+    }
+
     let mut buf = String::new();
 
     while stdin_handle.read_line(&mut buf)? > 0 {
-        // use an anonymous scope so `line`'s borrow gets dropped
-        // before clearing the buffer
-        {
-            let line = buf.trim_right();
-
-            if decode_mode {
-                decode(line.as_bytes(), &mut stdout_handle, lossy)?;
-            } else {
-                // Ugh, unfortunately, since EncodeSet : Cloned : Sized, it
-                // cannot be boxed, so it's impossible to choose our encode set
-                // only once.
-                match arg_matches.value_of("encode-set").unwrap() {
-                    "default" => encode(&line, pe::DEFAULT_ENCODE_SET, &mut stdout_handle)?,
-                    "path" => encode(&line, pe::PATH_SEGMENT_ENCODE_SET, &mut stdout_handle)?,
-                    "query" => encode(&line, pe::QUERY_ENCODE_SET, &mut stdout_handle)?,
-                    "simple" => encode(&line, pe::SIMPLE_ENCODE_SET, &mut stdout_handle)?,
-                    "userinfo" => encode(&line, pe::USERINFO_ENCODE_SET, &mut stdout_handle)?,
-                    _ => panic!("Unknown encode set"),
-                };
-            }
-        }
-
+        transform_line(buf.trim_right(), &mut stdout_handle, arg_matches)?;
         buf.clear();
     }
 
     Ok(())
+}
+
+fn transform_line<W: io::Write>(
+    line: &str,
+    output: &mut W,
+    arg_matches: &ArgMatches,
+) -> Result<(), Box<Error + Send + Sync>> {
+    let decode_mode = arg_matches.is_present("decode") || arg_matches.is_present("strict-decode");
+    let lossy = !arg_matches.is_present("strict-decode");
+
+    if decode_mode {
+        decode(line.as_bytes(), output, lossy)
+    } else {
+        // Ugh, unfortunately, since EncodeSet : Cloned : Sized, it
+        // cannot be boxed, so it's impossible to choose our encode set
+        // only once.
+        match arg_matches.value_of("encode-set").unwrap() {
+            "default" => encode(&line, pe::DEFAULT_ENCODE_SET, output)?,
+            "path" => encode(&line, pe::PATH_SEGMENT_ENCODE_SET, output)?,
+            "query" => encode(&line, pe::QUERY_ENCODE_SET, output)?,
+            "simple" => encode(&line, pe::SIMPLE_ENCODE_SET, output)?,
+            "userinfo" => encode(&line, pe::USERINFO_ENCODE_SET, output)?,
+            _ => panic!("Unknown encode set"),
+        };
+
+        Ok(())
+    }
 }
 
 fn decode<W: io::Write>(
