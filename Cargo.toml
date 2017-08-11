@@ -2,6 +2,12 @@
 name = "urlencode"
 version = "0.1.0"
 authors = ["Skyler Hawthorne <skylerhawthorne@gmail.com>"]
+description = "A CLI utility for URL-encoding or -decoding strings"
+repository = "https://github.com/dead10ck/urlencode"
+readme = "README.adoc"
+keywords = [ "urlencode", "url", "encode", "decode", "percent" ]
+categories = [ "command-line-utilities", "encoding" ]
+license = "AML"
 
 [dependencies]
 percent-encoding = "1"
