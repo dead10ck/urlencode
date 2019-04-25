@@ -1,14 +1,15 @@
 [package]
 name = "urlencode"
-version = "0.1.1"
-authors = ["Skyler Hawthorne <skylerhawthorne@gmail.com>"]
+version = "0.1.2"
+authors = ["Skyler Hawthorne <skylerhawthorne@gmail.com>", "Oliver Jan Krylow <oliver@bugabinga.net>"]
 description = "A CLI utility for URL-encoding or -decoding strings"
 repository = "https://github.com/dead10ck/urlencode"
 readme = "README.adoc"
 keywords = [ "urlencode", "url", "encode", "decode", "percent" ]
 categories = [ "command-line-utilities", "encoding" ]
-license = "AML"
+license = "MIT"
+edition = "2018"
 
 [dependencies]
-percent-encoding = "1"
-clap = "2"
+percent-encoding = "*"
+clap = "*"
