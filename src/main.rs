@@ -1,16 +1,13 @@
-extern crate percent_encoding;
-extern crate clap;
-
 use std::borrow::Borrow;
 use std::error::Error;
 use std::io;
 use std::io::BufRead;
 use std::iter;
 
-use clap::{Arg, App, ArgMatches};
+use clap::{App, Arg, ArgMatches};
 use percent_encoding as pe;
 
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() {
     let matches = App::new("urlencode")
@@ -20,9 +17,12 @@ fn main() {
             "URL-encodes or -decodes the input. If INPUT is given, it encodes or \
              decodes INPUT, otherwise it takes its input fromt stdin.",
         )
-        .arg(Arg::with_name("decode").short("d").long("decode").help(
-            "Decode the input, rather than encode.",
-        ))
+        .arg(
+            Arg::with_name("decode")
+                .short("d")
+                .long("decode")
+                .help("Decode the input, rather than encode."),
+        )
         .arg(
             Arg::with_name("strict-decode")
                 .short("s")
@@ -42,8 +42,8 @@ fn main() {
                 .help("The encode set to use when encoding.")
                 .long_help(
                     "The encode set to use when encoding. See \
-                      https://docs.rs/percent-encoding/1.0.0/percent_encoding/index.html \
-                      for more details.",
+                     https://docs.rs/percent-encoding/1.0.0/percent_encoding/index.html \
+                     for more details.",
                 ),
         )
         .arg(
@@ -73,7 +73,7 @@ fn run(arg_matches: &ArgMatches) -> Result<(), Box<Error + Send + Sync>> {
     let mut buf = String::new();
 
     while stdin_handle.read_line(&mut buf)? > 0 {
-        transform_line(buf.trim_right(), &mut stdout_handle, arg_matches)?;
+        transform_line(buf.trim_end(), &mut stdout_handle, arg_matches)?;
         buf.clear();
     }
 
@@ -143,10 +143,10 @@ where
     W: io::Write,
 {
     for string in strings {
-        output.write(string.as_bytes())?;
+        output.write_all(string.as_bytes())?;
     }
 
-    output.write("\n".as_bytes())?;
+    output.write_all("\n".as_bytes())?;
 
     Ok(())
 }
