@@ -8,11 +8,12 @@ use clap::{App, Arg, ArgMatches};
 use percent_encoding as pe;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
+const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
 
 fn main() {
     let matches = App::new("urlencode")
         .version(VERSION)
-        .author("Skyler Hawthorne <skylerhawthorne@gmail.com>")
+        .author(AUTHORS)
         .about(
             "URL-encodes or -decodes the input. If INPUT is given, it encodes or \
              decodes INPUT, otherwise it takes its input fromt stdin.",
@@ -59,7 +60,7 @@ fn main() {
     }
 }
 
-fn run(arg_matches: &ArgMatches) -> Result<(), Box<Error + Send + Sync>> {
+fn run(arg_matches: &ArgMatches) -> Result<(), Box<dyn Error + Send + Sync>> {
     let stdin = io::stdin();
     let stdout = io::stdout();
     let mut stdout_handle = stdout.lock();
@@ -84,7 +85,7 @@ fn transform_line<W: io::Write>(
     line: &str,
     output: &mut W,
     arg_matches: &ArgMatches,
-) -> Result<(), Box<Error + Send + Sync>> {
+) -> Result<(), Box<dyn Error + Send + Sync>> {
     let decode_mode = arg_matches.is_present("decode") || arg_matches.is_present("strict-decode");
     let lossy = !arg_matches.is_present("strict-decode");
 
@@ -95,11 +96,11 @@ fn transform_line<W: io::Write>(
         // cannot be boxed, so it's impossible to choose our encode set
         // only once.
         match arg_matches.value_of("encode-set").unwrap() {
-            "default" => encode(&line, pe::DEFAULT_ENCODE_SET, output)?,
-            "path" => encode(&line, pe::PATH_SEGMENT_ENCODE_SET, output)?,
-            "query" => encode(&line, pe::QUERY_ENCODE_SET, output)?,
-            "simple" => encode(&line, pe::SIMPLE_ENCODE_SET, output)?,
-            "userinfo" => encode(&line, pe::USERINFO_ENCODE_SET, output)?,
+            "default" => encode(line, pe::DEFAULT_ENCODE_SET, output)?,
+            "path" => encode(line, pe::PATH_SEGMENT_ENCODE_SET, output)?,
+            "query" => encode(line, pe::QUERY_ENCODE_SET, output)?,
+            "simple" => encode(line, pe::SIMPLE_ENCODE_SET, output)?,
+            "userinfo" => encode(line, pe::USERINFO_ENCODE_SET, output)?,
             _ => panic!("Unknown encode set"),
         };
 
@@ -111,7 +112,7 @@ fn decode<W: io::Write>(
     line: &[u8],
     output: &mut W,
     lossy: bool,
-) -> Result<(), Box<Error + Send + Sync>> {
+) -> Result<(), Box<dyn Error + Send + Sync>> {
     let decoder = pe::percent_decode(line);
 
     let decoded = if lossy {
