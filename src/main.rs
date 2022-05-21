@@ -73,25 +73,41 @@ fn run(arg_matches: &ArgMatches) -> Result<(), Box<dyn Error + Send + Sync>> {
     let stdout = io::stdout();
     let mut stdout_handle = stdout.lock();
     let mut stdin_handle = stdin.lock();
+    let encode_set = get_encode_set(arg_matches);
 
     if arg_matches.is_present("INPUT") {
         let input = arg_matches.value_of("INPUT").unwrap();
-        return transform_line(input, &mut stdout_handle, arg_matches);
+        return transform_line(input, &mut stdout_handle, encode_set, arg_matches);
     }
 
     let mut buf = String::new();
 
     while stdin_handle.read_line(&mut buf)? > 0 {
-        transform_line(buf.trim_end(), &mut stdout_handle, arg_matches)?;
+        transform_line(buf.trim_end(), &mut stdout_handle, encode_set, arg_matches)?;
         buf.clear();
     }
 
     Ok(())
 }
 
+fn get_encode_set(args: &ArgMatches) -> &'static AsciiSet {
+    match args.value_of("encode-set").unwrap() {
+        "control" => encode_sets::CONTROLS,
+        "fragment" => encode_sets::FRAGMENT,
+        "query" => encode_sets::QUERY,
+        "squery" => encode_sets::SPECIAL_QUERY,
+        "path" => encode_sets::PATH,
+        "userinfo" => encode_sets::USERINFO,
+        "component" => encode_sets::COMPONENT,
+        "form" => encode_sets::FORM,
+        _ => panic!("Unknown encode set"),
+    }
+}
+
 fn transform_line<W: io::Write>(
     line: &str,
     output: &mut W,
+    encode_set: &'static AsciiSet,
     arg_matches: &ArgMatches,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let decode_mode = arg_matches.is_present("decode") || arg_matches.is_present("strict-decode");
@@ -100,21 +116,7 @@ fn transform_line<W: io::Write>(
     if decode_mode {
         decode(line.as_bytes(), output, lossy)
     } else {
-        // Ugh, unfortunately, since EncodeSet : Cloned : Sized, it
-        // cannot be boxed, so it's impossible to choose our encode set
-        // only once.
-        match arg_matches.value_of("encode-set").unwrap() {
-            "control" => encode(line, encode_sets::CONTROLS, output)?,
-            "fragment" => encode(line, encode_sets::FRAGMENT, output)?,
-            "query" => encode(line, encode_sets::QUERY, output)?,
-            "squery" => encode(line, encode_sets::SPECIAL_QUERY, output)?,
-            "path" => encode(line, encode_sets::PATH, output)?,
-            "userinfo" => encode(line, encode_sets::USERINFO, output)?,
-            "component" => encode(line, encode_sets::COMPONENT, output)?,
-            "form" => encode(line, encode_sets::FORM, output)?,
-            _ => panic!("Unknown encode set"),
-        };
-
+        encode(line, encode_set, output)?;
         Ok(())
     }
 }
