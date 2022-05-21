@@ -1,7 +1,7 @@
 [package]
 name = "urlencode"
 version = "0.1.2"
-authors = ["Skyler Hawthorne <skylerhawthorne@gmail.com>"]
+authors = ["Skyler Hawthorne <skyler@dead10ck.com>"]
 description = "A CLI utility for URL-encoding or -decoding strings"
 repository = "https://github.com/dead10ck/urlencode"
 readme = "README.adoc"
