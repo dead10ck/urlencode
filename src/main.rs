@@ -4,14 +4,17 @@ use std::io;
 use std::io::BufRead;
 use std::iter;
 
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches, Command};
+use pe::AsciiSet;
 use percent_encoding as pe;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
 
+mod encode_sets;
+
 fn main() {
-    let matches = App::new("urlencode")
+    let matches = Command::new("urlencode")
         .version(VERSION)
         .author(AUTHORS)
         .about(
@@ -19,14 +22,14 @@ fn main() {
              decodes INPUT, otherwise it takes its input fromt stdin.",
         )
         .arg(
-            Arg::with_name("decode")
-                .short("d")
+            Arg::new("decode")
+                .short('d')
                 .long("decode")
                 .help("Decode the input, rather than encode."),
         )
         .arg(
-            Arg::with_name("strict-decode")
-                .short("s")
+            Arg::new("strict-decode")
+                .short('s')
                 .long("strict-decode")
                 .help(
                     "Decode the input non-lossily. If set, the program will fail if it \
@@ -34,12 +37,21 @@ fn main() {
                 ),
         )
         .arg(
-            Arg::with_name("encode-set")
-                .short("e")
+            Arg::new("encode-set")
+                .short('e')
                 .long("encode-set")
                 .takes_value(true)
-                .possible_values(&["default", "path", "query", "simple", "userinfo"])
-                .default_value("default")
+                .possible_values(&[
+                    "control",
+                    "fragment",
+                    "query",
+                    "squery",
+                    "path",
+                    "userinfo",
+                    "component",
+                    "form",
+                ])
+                .default_value("component")
                 .help("The encode set to use when encoding.")
                 .long_help(
                     "The encode set to use when encoding. See \
@@ -47,11 +59,7 @@ fn main() {
                      for more details.",
                 ),
         )
-        .arg(
-            Arg::with_name("INPUT")
-                .help("The string to encode.")
-                .index(1),
-        )
+        .arg(Arg::new("INPUT").help("The string to encode.").index(1))
         .get_matches();
 
     if let Err(e) = run(&matches) {
@@ -96,11 +104,14 @@ fn transform_line<W: io::Write>(
         // cannot be boxed, so it's impossible to choose our encode set
         // only once.
         match arg_matches.value_of("encode-set").unwrap() {
-            "default" => encode(line, pe::DEFAULT_ENCODE_SET, output)?,
-            "path" => encode(line, pe::PATH_SEGMENT_ENCODE_SET, output)?,
-            "query" => encode(line, pe::QUERY_ENCODE_SET, output)?,
-            "simple" => encode(line, pe::SIMPLE_ENCODE_SET, output)?,
-            "userinfo" => encode(line, pe::USERINFO_ENCODE_SET, output)?,
+            "control" => encode(line, encode_sets::CONTROLS, output)?,
+            "fragment" => encode(line, encode_sets::FRAGMENT, output)?,
+            "query" => encode(line, encode_sets::QUERY, output)?,
+            "squery" => encode(line, encode_sets::SPECIAL_QUERY, output)?,
+            "path" => encode(line, encode_sets::PATH, output)?,
+            "userinfo" => encode(line, encode_sets::USERINFO, output)?,
+            "component" => encode(line, encode_sets::COMPONENT, output)?,
+            "form" => encode(line, encode_sets::FORM, output)?,
             _ => panic!("Unknown encode set"),
         };
 
@@ -129,9 +140,9 @@ fn decode<W: io::Write>(
     }
 }
 
-fn encode<W: io::Write, E: pe::EncodeSet>(
+fn encode<W: io::Write>(
     line: &str,
-    encode_set: E,
+    encode_set: &'static AsciiSet,
     output: &mut W,
 ) -> io::Result<()> {
     let encoded = pe::utf8_percent_encode(line, encode_set);
