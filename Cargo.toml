@@ -8,7 +8,7 @@ readme = "README.adoc"
 keywords = [ "urlencode", "url", "encode", "decode", "percent" ]
 categories = [ "command-line-utilities", "encoding" ]
 license = "MIT"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 percent-encoding = "1"
