@@ -4,8 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+== [1.0.1] - 2022-05-21
+=== Changed
+
+* Minor optimization with encode set selection
+
 == [1.0.0] - 2022-05-21
 === Changed
+
 * Upgrade to Rust edition 2021
 * Updated dependencies
   * This included a *breaking change* in `percent-encoding`, which removed the
