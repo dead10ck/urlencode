@@ -55,7 +55,7 @@ fn main() {
                 .help("The encode set to use when encoding.")
                 .long_help(
                     "The encode set to use when encoding. See \
-                     https://docs.rs/percent-encoding/1.0.0/percent_encoding/index.html \
+                     https://url.spec.whatwg.org/ \
                      for more details.",
                 ),
         )
