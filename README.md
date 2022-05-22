@@ -33,7 +33,7 @@ Run `urlencode --help` to see all options.
 
 Since different parts of a URL have different encoding requirements, there are
 many encode sets to choose from. See
-[this documentation page](https://docs.rs/percent-encoding/1.0.0/percent_encoding/index.html)
+[this documentation page](https://url.spec.whatwg.org/)
 for an explanation of each. They can be specified with the `-e` or `--encode-set`
 option:
 
